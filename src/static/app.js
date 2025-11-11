@@ -26,11 +26,14 @@ document.addEventListener("DOMContentLoaded", () => {
           participantsHTML = `
             <div class="participants-section">
               <strong>Participants:</strong>
-              <ul class="participants-list">
+              <ul class="participants-list no-bullets">
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span></li>`
+                      `<li>
+                        <span class="participant-email">${email}</span>
+                        <button class="delete-participant" title="Remove participant" data-activity="${name}" data-email="${email}">&#10060;</button>
+                      </li>`
                   )
                   .join("")}
               </ul>
@@ -54,6 +57,32 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         activitiesList.appendChild(activityCard);
+
+        // Add event listeners for delete buttons (after adding to DOM)
+        setTimeout(() => {
+          const deleteButtons = activityCard.querySelectorAll('.delete-participant');
+          deleteButtons.forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+              const activityName = btn.getAttribute('data-activity');
+              const email = btn.getAttribute('data-email');
+              if (!activityName || !email) return;
+              try {
+                const response = await fetch(`/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`, {
+                  method: 'POST',
+                });
+                if (response.ok) {
+                  // Refresh activities list
+                  fetchActivities();
+                } else {
+                  const result = await response.json();
+                  alert(result.detail || 'Failed to remove participant');
+                }
+              } catch (error) {
+                alert('Error removing participant');
+              }
+            });
+          });
+        }, 0);
 
         // Add option to select dropdown
         const option = document.createElement("option");
